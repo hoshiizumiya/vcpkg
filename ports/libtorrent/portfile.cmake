@@ -109,6 +109,7 @@ vcpkg_cmake_config_fixup(
 vcpkg_install_copyright(
     FILE_LIST
         "${SOURCE_PATH}/LICENSE"
+        "${SOURCE_PATH}/include/libtorrent/aux_/puff.hpp"
         "${TRYSIGNAL_SOURCE_PATH}/LICENSE"
 )
 
