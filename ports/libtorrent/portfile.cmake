@@ -4,16 +4,18 @@ else()
     set(_static_runtime OFF)
 endif()
 
-# Upstream exports TORRENT_ABI_VERSION=2 when deprecated-functions is enabled,
-# and 100 otherwise. Public headers use this value to select their ABI.
+# Libtorrent exports TORRENT_ABI_VERSION=2 when deprecated-functions is enabled,
+# and 100 otherwise. Public headers use this value to select their ABI:
+# https://github.com/arvidn/libtorrent/blob/56ae8caba38bf154ffc210403cb23f91d0ecaa49/CMakeLists.txt#L738-L741
 if("deprfun" IN_LIST FEATURES)
     set(_torrent_abi_version 2)
 else()
     set(_torrent_abi_version 100)
 endif()
 
-# Upstream exports TORRENT_USE_RTC=0 when WebTorrent is disabled. When enabled,
-# config.hpp defaults it to 1, so no explicit upstream definition is emitted.
+# Libtorrent exports TORRENT_USE_RTC=0 when WebTorrent is disabled. When enabled,
+# config.hpp defaults it to 1, so no explicit definition is emitted:
+# https://github.com/arvidn/libtorrent/blob/56ae8caba38bf154ffc210403cb23f91d0ecaa49/CMakeLists.txt#L744-L750
 if("webtorrent" IN_LIST FEATURES)
     set(_torrent_use_rtc 1)
 else()
@@ -62,9 +64,10 @@ vcpkg_cmake_configure(
 
 vcpkg_cmake_install()
 
-# These mirror upstream's public target compile definitions for this port's
+# These mirror libtorrent's public target compile definitions for this port's
 # fixed OpenSSL configuration. TORRENT_USE_LIBCRYPTO also selects the public
 # lcrypto inline namespace, so headers must define it to match the library ABI.
+# https://github.com/arvidn/libtorrent/blob/56ae8caba38bf154ffc210403cb23f91d0ecaa49/CMakeLists.txt#L769-L784
 set(_torrent_header_config [=[
 #ifndef TORRENT_USE_OPENSSL
 #define TORRENT_USE_OPENSSL
@@ -84,7 +87,8 @@ set(_torrent_header_config [=[
 ]=])
 string(CONFIGURE "${_torrent_header_config}" _torrent_header_config @ONLY)
 if(VCPKG_LIBRARY_LINKAGE STREQUAL "dynamic")
-    # Upstream exports this definition when building torrent-rasterbar shared.
+    # Libtorrent exports this definition when building torrent-rasterbar shared:
+    # https://github.com/arvidn/libtorrent/blob/56ae8caba38bf154ffc210403cb23f91d0ecaa49/CMakeLists.txt#L549-L554
     string(APPEND _torrent_header_config [=[
 #ifndef TORRENT_LINKING_SHARED
 #define TORRENT_LINKING_SHARED
