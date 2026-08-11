@@ -1,7 +1,19 @@
-﻿if(VCPKG_TARGET_IS_WINDOWS AND VCPKG_CRT_LINKAGE STREQUAL "static")
+if(VCPKG_TARGET_IS_WINDOWS AND VCPKG_CRT_LINKAGE STREQUAL "static")
     set(_static_runtime ON)
 else()
     set(_static_runtime OFF)
+endif()
+
+if("deprfun" IN_LIST FEATURES)
+    set(_torrent_abi_version 2)
+else()
+    set(_torrent_abi_version 100)
+endif()
+
+if("webtorrent" IN_LIST FEATURES)
+    set(_torrent_use_rtc 1)
+else()
+    set(_torrent_use_rtc 0)
 endif()
 
 vcpkg_check_features(
@@ -46,12 +58,48 @@ vcpkg_cmake_configure(
 
 vcpkg_cmake_install()
 
+set(_torrent_header_config [=[
+#ifndef TORRENT_USE_OPENSSL
+#define TORRENT_USE_OPENSSL
+#endif
+#ifndef TORRENT_USE_LIBCRYPTO
+#define TORRENT_USE_LIBCRYPTO
+#endif
+#ifndef TORRENT_SSL_PEERS
+#define TORRENT_SSL_PEERS
+#endif
+#ifndef TORRENT_ABI_VERSION
+#define TORRENT_ABI_VERSION @ABI_VERSION@
+#endif
+#ifndef TORRENT_USE_RTC
+#define TORRENT_USE_RTC @USE_RTC@
+#endif
+]=])
+string(REPLACE "@ABI_VERSION@" "${_torrent_abi_version}" _torrent_header_config "${_torrent_header_config}")
+string(REPLACE "@USE_RTC@" "${_torrent_use_rtc}" _torrent_header_config "${_torrent_header_config}")
+if(VCPKG_LIBRARY_LINKAGE STREQUAL "dynamic")
+    string(APPEND _torrent_header_config [=[
+#ifndef TORRENT_LINKING_SHARED
+#define TORRENT_LINKING_SHARED
+#endif
+]=])
+endif()
+vcpkg_replace_string(
+    "${CURRENT_PACKAGES_DIR}/include/libtorrent/config.hpp"
+    "#define TORRENT_CONFIG_HPP_INCLUDED"
+    "#define TORRENT_CONFIG_HPP_INCLUDED\n${_torrent_header_config}"
+)
+
 vcpkg_cmake_config_fixup(
     PACKAGE_NAME LibtorrentRasterbar
     CONFIG_PATH lib/cmake/LibtorrentRasterbar
 )
 
-vcpkg_install_copyright(FILE_LIST "${SOURCE_PATH}/LICENSE")
+vcpkg_install_copyright(
+    FILE_LIST
+        "${SOURCE_PATH}/LICENSE"
+        "${TRYSIGNAL_SOURCE_PATH}/LICENSE"
+)
 
 file(
     REMOVE_RECURSE
