@@ -15,7 +15,7 @@ endif()
 
 # Libtorrent exports TORRENT_USE_RTC=0 when WebTorrent is disabled. When enabled,
 # config.hpp defaults it to 1, so no explicit definition is emitted:
-# https://github.com/arvidn/libtorrent/blob/56ae8caba38bf154ffc210403cb23f91d0ecaa49/CMakeLists.txt#L744-L750
+# https://github.com/arvidn/libtorrent/blob/56ae8caba38bf154ffc210403cb23f91d0ecaa49/CMakeLists.txt#L749-L750
 if("webtorrent" IN_LIST FEATURES)
     set(_torrent_use_rtc 1)
 else()
