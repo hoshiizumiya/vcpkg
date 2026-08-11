@@ -4,12 +4,16 @@ else()
     set(_static_runtime OFF)
 endif()
 
+# Upstream exports TORRENT_ABI_VERSION=2 when deprecated-functions is enabled,
+# and 100 otherwise. Public headers use this value to select their ABI.
 if("deprfun" IN_LIST FEATURES)
     set(_torrent_abi_version 2)
 else()
     set(_torrent_abi_version 100)
 endif()
 
+# Upstream exports TORRENT_USE_RTC=0 when WebTorrent is disabled. When enabled,
+# config.hpp defaults it to 1, so no explicit upstream definition is emitted.
 if("webtorrent" IN_LIST FEATURES)
     set(_torrent_use_rtc 1)
 else()
@@ -58,6 +62,9 @@ vcpkg_cmake_configure(
 
 vcpkg_cmake_install()
 
+# These mirror upstream's public target compile definitions for this port's
+# fixed OpenSSL configuration. TORRENT_USE_LIBCRYPTO also selects the public
+# lcrypto inline namespace, so headers must define it to match the library ABI.
 set(_torrent_header_config [=[
 #ifndef TORRENT_USE_OPENSSL
 #define TORRENT_USE_OPENSSL
@@ -69,15 +76,15 @@ set(_torrent_header_config [=[
 #define TORRENT_SSL_PEERS
 #endif
 #ifndef TORRENT_ABI_VERSION
-#define TORRENT_ABI_VERSION @ABI_VERSION@
+#define TORRENT_ABI_VERSION @_torrent_abi_version@
 #endif
 #ifndef TORRENT_USE_RTC
-#define TORRENT_USE_RTC @USE_RTC@
+#define TORRENT_USE_RTC @_torrent_use_rtc@
 #endif
 ]=])
-string(REPLACE "@ABI_VERSION@" "${_torrent_abi_version}" _torrent_header_config "${_torrent_header_config}")
-string(REPLACE "@USE_RTC@" "${_torrent_use_rtc}" _torrent_header_config "${_torrent_header_config}")
+string(CONFIGURE "${_torrent_header_config}" _torrent_header_config @ONLY)
 if(VCPKG_LIBRARY_LINKAGE STREQUAL "dynamic")
+    # Upstream exports this definition when building torrent-rasterbar shared.
     string(APPEND _torrent_header_config [=[
 #ifndef TORRENT_LINKING_SHARED
 #define TORRENT_LINKING_SHARED
